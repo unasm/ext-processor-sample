@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
 
 /**
  * Created by fengjiajie on 16/9/28.
@@ -21,14 +24,22 @@ public class SampleExtProcessor implements ExtProcessor {
     private static List<Map<String, Object>> DbMeta ;
     //private static String[] resources = {"db", "cache"}
 
-    public SampleExtProcessor() {
-        try {
-            DBSource db = new DBSource();
-            DbMeta = db.executeQuery("select * from property_define where table_type = 0");
-            //List<Map<String, Object>> data = db.executeQuery("select * from property_define where table_type = 0");
-        } catch (SQLException ex) {
-            logger.error("获取数据库数据异常 {}", ex);
+    public class SyncDBListTask extends TimerTask {
+
+        @Override
+        public void run() {
+            logger.error("start_timer_process_db_data");
+            try {
+                DBSource db = new DBSource();
+                DbMeta = db.executeQuery("select * from property_define where table_type = 0");
+            } catch (SQLException ex) {
+                logger.error("获取数据库数据异常 {}", ex);
+            }
         }
+    }
+
+    public SampleExtProcessor() {
+        new Timer().schedule(new SyncDBListTask(),0, 30 * 60000);
     }
 
 
@@ -36,7 +47,7 @@ public class SampleExtProcessor implements ExtProcessor {
 
         // 传入参数为一条符合 Sensors Analytics 数据格式定义的 Json
         // 数据格式定义 https://www.sensorsdata.cn/manual/data_schema.html
-        //logger.info("preProcess_data {} ", record);
+        //logger.warn("preProcess_data {} ", record);
         if (record.length() == 0) {
             return "";
         }
